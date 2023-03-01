@@ -1,12 +1,12 @@
 import os
 
-from libqtile import qtile, bar, layout, widget
-from libqtile.config import Click, Drag, Group, Key, Match, Screen
+from libqtile import qtile, bar, layout
+from libqtile.config import Click, Drag, DropDown, Group, Key, KeyChord, Match, ScratchPad, Screen
 from libqtile.lazy import lazy
 from libqtile.dgroups import simple_key_binder
 
 from qtile_extras import widget
-from qtile_extras.widget.decorations import BorderDecoration
+from qtile_extras.widget.decorations import RectDecoration
 
 from modules.hooks import *
 
@@ -48,8 +48,20 @@ keys = [
         lazy.spawn("emacsclient -c -a emacs"),
         desc='Doom Emacs'
         ),
-    Key([mod], "r", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
+    Key([mod], "r",
+        lazy.spawn(os.path.expanduser('~/.config/rofi/scripts/launcher_t2')),
+        desc='Spawn a command using a prompt widget'
+        ),
 
+    ### Rofi Keychords
+    KeyChord([mod], "p", [
+        Key([], "n",
+            lazy.spawn("firefox --new-window https://notion.so -P notion-profile --no-remote --class=notion --name=notion"),
+            desc='Spawn notion as native-like app'
+            )
+        ],
+        name = 'D Menu Run'
+    ),
     ### Switch focus to specific monitors
     Key([mod], "w",
         lazy.to_screen(0),
@@ -112,19 +124,37 @@ keys = [
         lazy.window.toggle_fullscreen(),
         desc='toggle fullscreen'
         ),
+    ### Stack controls
+    Key([mod, "shift"], "Tab",
+        lazy.layout.rotate(),
+        lazy.layout.flip(),
+        desc='Switch which side main pane occupies (XmonadTall)'
+        ),
+    Key([mod], "space",
+        lazy.layout.next(),
+        desc='Switch window focus to other pane(s) of stack'
+        ),
+    Key([mod, "shift"], "space",
+        lazy.layout.toggle_split(),
+        desc='Toggle between split and unsplit sides of stack'
+        ),
+
+    ### Audio and Brightness keymapping
     Key([], "XF86AudioRaiseVolume",lazy.spawn("amixer set Master 3%+")),
     Key([], "XF86AudioLowerVolume",lazy.spawn("amixer set Master 3%-")),
     Key([], "XF86AudioMute",lazy.spawn("amixer set Master toggle")),
     Key([], "XF86MonBrightnessUp",lazy.spawn("brightnessctl set +10%")),
     Key([], "XF86MonBrightnessDown",lazy.spawn("brightnessctl set 10%-")),
+
+    ### Scratchpads and stuff
 ]
 
 groups = [
-    Group("", layout='monadtall'),
-    Group("", layout='monadtall'),
-    Group("爵", layout='monadtall'),
-    Group("", layout='monadtall'),
-    Group("辶", layout='monadtall'),
+    Group("[ 1 ]", layout='monadtall'),
+    Group("[ 2 ]", layout='monadtall'),
+    Group("[ 3 ]", layout='monadtall'),
+    Group("[ 4 ]", layout='monadtall'),
+    Group("[ 5 ]", layout='monadtall'),
 ]
 
 dgroups_key_binder = simple_key_binder("mod4")
@@ -147,7 +177,6 @@ layouts = [
     #layout.Matrix(**layout_theme),
     #layout.Zoomy(**layout_theme),
     layout.MonadTall(**layout_theme),
-    layout.Max(**layout_theme),
     layout.Stack(num_stacks=2),
     layout.RatioTile(**layout_theme),
     layout.TreeTab(
@@ -170,7 +199,11 @@ layouts = [
          vspace = 3,
          panel_width = 200
          ),
-    layout.Floating(**layout_theme)
+    layout.Floating(
+        margin = 8,
+        border_focus = "#e1acff",
+        border_normal = "#1D2330"
+    )
 ]
 
 # Widgets
@@ -186,12 +219,33 @@ colors = [["#282c34", "#282c34"],
           ["#46d9ff", "#46d9ff"],
           ["#a9a1e1", "#a9a1e1"]]
 
+bubble_colors = {
+    "g1": "#bfbfbf",
+    "g2": "#4c5958",
+    "g3": "#8aa6a3",
+    "g4": "#10403b",
+    "g5": "#127369",
+    "foreground": "#ffffff",
+    "background": "#1F2024"
+}
+
 widget_defaults = dict(
-    font="SauceCodePro Nerd Font",
+    font="SauceCodePro Nerd Font Medium",
     fontsize=12,
     padding=3,
 )
 extension_defaults = widget_defaults.copy()
+
+decoration_group = {
+    "decorations": [
+        RectDecoration(
+            colour = bubble_colors["background"],
+            radius = 10,
+            filled = True,
+            clip = True,
+        )
+    ]
+}
 
 def init_widgets_list():
     return [
@@ -199,40 +253,31 @@ def init_widgets_list():
         widget.Image(filename='~/.config/qtile/eos-c.png', margin=3, mouse_callbacks={'Button1': lambda: qtile.cmd_spawn("rofi -show combi")}),
         widget.Spacer(length=5),
         widget.GroupBox(
-            padding = 5,
-            borderwidth = 2,
-            active = colors[2],
-            inactive = colors[7],
-            rounded = False,
-            highlight_color = colors[1],
+            fontsize = 10,
+            padding_y = 0,
+            padding_x = 0,
+            margin_x = 0,
+            margin_y = 4,
+            active = "#fff",
+            inactive = "#4d4d4d",
+            highlight_color = "#000",
             highlight_method = "line",
-            this_current_screen_border = colors[6],
-            this_screen_border = colors [4],
-            other_current_screen_border = colors[6],
-            other_screen_border = colors[4],
-            foreground = colors[2],
+            disable_drag = True,
+            **decoration_group
         ),
-        widget.TextBox(
-            text = '｜',
-            background = colors[0],
-            foreground = '474747',
-            fontsize = 14
-        ),
+        widget.Spacer(length=5),
         widget.CurrentLayoutIcon(
             custom_icon_paths = [os.path.expanduser("~/.config/qtile/icons")],
             foreground = colors[2],
-            background = colors[0],
-            padding = 0,
-            scale = 0.5
+            padding = 3,
+            scale = 0.5,
+            **decoration_group
         ),
-        widget.TextBox(
-            text = '｜',
-            background = colors[0],
-            foreground = '474747',
-            fontsize = 14
-        ),
+        widget.Spacer(length=5),
         widget.Prompt(),
+        widget.Spacer(length=5),
         widget.WindowName(padding=0),
+        widget.Spacer(length=5),
         widget.Chord(
             chords_colors={
                 "launch": ("#ff0000", "#ffffff"),
@@ -241,105 +286,85 @@ def init_widgets_list():
         ),
         # NB Systray is incompatible with Wayland, consider using StatusNotifier instead
         # widget.StatusNotifier(),
-        widget.Systray(),
+        widget.Systray(
+            icon_size = 18
+        ),
         widget.Spacer(length=5),
         widget.Net(
             interface = "wlan0",
-            format = 'Net: {down} ↓↑ {up}',
-            foreground = colors[3],
-            background = colors[0],
-            padding = 5,
-            decorations=[
-                BorderDecoration(
-                    colour = colors[3],
-                    border_width = [0, 0, 1, 0],
-                    padding_x = 5,
-                    padding_y = None,
-                )
-            ],
+            format = '  {down} ↓↑ {up}',
+            padding = 10,
+            foreground = bubble_colors["foreground"],
+            **decoration_group
         ),
         widget.Spacer(length=5),
         widget.ThermalSensor(
-            foreground = colors[4],
-            background = colors[0],
             threshold = 90,
-            fmt = 'Temp: {}',
-            padding = 5,
-            decorations=[
-                BorderDecoration(
-                    colour = colors[4],
-                    border_width = [0, 0, 1, 0],
-                    padding_x = 5,
-                    padding_y = None,
-                )
-            ],
+            fmt = ' {}',
+            padding = 10,
+            foreground = bubble_colors["foreground"],
+            **decoration_group
         ),
         widget.Spacer(length=5),
         widget.CheckUpdates(
             update_interval = 1800,
             distro = "Arch_checkupdates",
-            display_format = "Updates: {updates}",
-            foreground = colors[5],
-            colour_have_updates = colors[5],
-            colour_no_updates = colors[5],
-            mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn(terminal + ' -e sudo pacman -Syu')},
-            padding = 5,
-            background = colors[0],
-            decorations=[
-                BorderDecoration(
-                    colour = colors[5],
-                    border_width = [0, 0, 1, 0],
-                    padding_x = 5,
-                    padding_y = None,
-                )
-            ],
+            display_format = "{updates} ﮮ",
+            mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn(myTerm + ' -e sudo pacman -Syu')},
+            padding = 10,
+            foreground = bubble_colors["foreground"],
+            colour_have_updates = bubble_colors["foreground"],
+            colour_no_updates = bubble_colors["foreground"],
+            **decoration_group
         ),
         widget.Spacer(length=5),
         widget.Memory(
-            foreground = colors[9],
-            background = colors[0],
-            mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn(terminal + ' -e htop')},
-            fmt = 'Mem:{}',
-            padding = 5,
-            decorations=[
-                BorderDecoration(
-                    colour = colors[9],
-                    border_width = [0, 0, 1, 0],
-                    padding_x = 5,
-                    padding_y = None,
-                )
-            ],
+            mouse_callbacks = {'Button1': lambda: qtile.cmd_spawn(myTerm + ' -e btop')},
+            fmt = ' {}',
+            padding = 10,
+            foreground = bubble_colors["foreground"],
+            **decoration_group
         ),
         widget.Spacer(length=5),
         widget.Volume(
-            foreground = colors[7],
-            background = colors[0],
-            fmt = 'Vol: {}',
-            padding = 5,
-            decorations=[
-                BorderDecoration(
-                    colour = colors[7],
-                    border_width = [0, 0, 1, 0],
-                    padding_x = 5,
-                    padding_y = None,
-                )
-            ],
+            fmt = '  {}',
+            padding = 10,
+            foreground = bubble_colors["foreground"],
+            **decoration_group
+        ),
+        widget.Spacer(length=5),
+        widget.Battery(
+            update_interval = 10,
+            padding = 10,
+            foreground = bubble_colors["foreground"],
+            **decoration_group
         ),
         widget.Spacer(length=5),
         widget.Clock(
-            foreground = colors[6],
-            background = colors[0],
-            format = "%A, %B %d - %H:%M ",
-            decorations=[
-                BorderDecoration(
-                    colour = colors[6],
-                    border_width = [0, 0, 1, 0],
-                    padding_x = 5,
-                    padding_y = None,
-                )
-            ],
+            padding = 10,
+            format = "  %A, %B %d",
+            foreground = bubble_colors["foreground"],
+            **decoration_group
         ),
         widget.Spacer(length=5),
+        widget.Clock(
+            padding = 10,
+            format = " %H:%M",
+            foreground = bubble_colors["foreground"],
+            **decoration_group
+        ),
+        widget.Spacer(length=5),
+        widget.TextBox(
+            padding = 10,
+            text = "襤",
+            mouse_callbacks= {
+                'Button1':
+                lambda: qtile.cmd_spawn(os.path.expanduser('~/.config/rofi.sayamsamal/powermenu.sh'))
+            },
+            foreground = bubble_colors["foreground"],
+            **decoration_group
+        ),
+        widget.Spacer(length=5)
     ]
 
 def init_widgets_screen1():
@@ -348,13 +373,14 @@ def init_widgets_screen1():
 
 def init_widgets_screen2():
     widgets_screen2 = init_widgets_list()
-    del widgets_screen2[10:11]
+    del widgets_screen2[12:13]
     return widgets_screen2
 
 # Screens
 screens = [
-    Screen(top=bar.Bar(widgets=init_widgets_screen1(), size=25, background=colors[0])),
-    # Screen(top=bar.Bar(widgets=init_widgets_screen2(), size=24))
+    Screen(top=bar.Bar(widgets=init_widgets_screen1(), size=25, background="#00000000", margin=8), wallpaper=os.path.expanduser('~/Pictures/wallpapers/cozy.jpg'), wallpaper_mode="fill"),
+    Screen(top=bar.Bar(widgets=init_widgets_screen2(), size=25, background="#00000000", margin=8), wallpaper=os.path.expanduser('~/Pictures/wallpapers/cozy.jpg'), wallpaper_mode="fill"),
+    # Screen(wallpaper=os.path.expanduser('~/Pictures/wallpapers/firewatch.png'), wallpaper_mode="fill")
 ]
 
 # Drag floating layouts.
@@ -376,7 +402,7 @@ floating_layout = layout.Floating(
         Match(wm_class="makebranch"),  # gitk
         Match(wm_class="maketag"),  # gitk
         Match(wm_class="ssh-askpass"),  # ssh-askpass
-        Match(wm_class="zoom"),  # ssh-askpass
+        Match(wm_class="zoom"),  # zoom
         Match(title="branchdialog"),  # gitk
         Match(title="pinentry"),  # GPG key password entry
     ]
@@ -400,4 +426,4 @@ wl_input_rules = None
 #
 # We choose LG3D to maximize irony: it is a 3D non-reparenting WM written in
 # java that happens to be on java's whitelist.
-wmname = "Qtile"
+wmname = "LG3D"

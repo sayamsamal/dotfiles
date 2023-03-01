@@ -1,17 +1,17 @@
 #!/bin/sh
 
-autorandr -c
+~/.screenlayout/monitorswitch.sh
 
-picom & disown # --experimental-backends --vsync should prevent screen tearing on most setups if needed
+picom -b & disown # --experimental-backends --vsync should prevent screen tearing on most setups if needed
+
+# feh --bg-fill ~/Pictures/wallpapers/firewatch.png --bg-fill ~/Pictures/wallpapers/firewatch.png & disown
 
 # Low battery notifier
-~/.config/qtile/scripts/check_battery.sh & disown
+# ~/.config/qtile/scripts/check_battery.sh & disown
 
 # Start welcome
-eos-welcome & disown
+# eos-welcome & disown
 
 /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 & disown # start polkit agent from GNOME
 
 nm-applet & disown
-
-feh --bg-scale /usr/share/endeavouros/backgrounds/wallpapers/clouds_realism.jpg
